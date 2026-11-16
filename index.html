@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GST TOOLS — ASIF &amp; ASSOCIATES</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+  body { margin:0; background:#f4f6f9; color:#1f2937; }
+  header { background:#0f172a; color:#fff; padding:18px 24px; }
+  header h1 { margin:0; font-size:20px; }
+  header p { margin:4px 0 0; font-size:13px; opacity:.8; }
+  .tabs { display:flex; gap:8px; padding:16px 24px 0; flex-wrap:wrap; }
+  .tab { padding:10px 18px; background:#e5e7eb; border:none; border-radius:8px 8px 0 0; cursor:pointer; font-weight:600; font-size:13px; }
+  .tab.active { background:#fff; color:#0f172a; box-shadow:0 -2px 6px rgba(0,0,0,.06); }
+  .panel { display:none; background:#fff; margin:0 24px 24px; padding:24px; border-radius:0 12px 12px 12px; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+  .panel.active { display:block; }
+  .dropzone { border:2px dashed #94a3b8; border-radius:12px; padding:28px; text-align:center; cursor:pointer; background:#f8fafc; font-size:13px; }
+  .dropzone.dragover { border-color:#2563eb; background:#eff6ff; }
+  .btn { background:#2563eb; color:#fff; border:none; padding:11px 20px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; }
+  .btn.secondary { background:#0f172a; }
+  .btn:disabled { background:#9ca3af; cursor:not-allowed; }
+  .steps { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+  .step { flex:1; min-width:220px; background:#f1f5f9; border-left:4px solid #cbd5e1; padding:12px 14px; border-radius:6px; }
+  .step.done { border-left-color:#16a34a; background:#f0fdf4; }
+  .step h4 { margin:0 0 6px; font-size:14px; }
+  .step p { margin:0 0 8px; font-size:12px; color:#475569; }
+  .status { margin-top:8px; font-size:13px; }
+  .ok { color:#16a34a; } .err { color:#dc2626; }
+  table { width:100%; border-collapse:collapse; margin-top:10px; font-size:12px; }
+  th, td { border:1px solid #e5e7eb; padding:6px 8px; text-align:left; white-space:nowrap; }
+  th { background:#f8fafc; }
+  .summary { display:flex; gap:12px; flex-wrap:wrap; margin-top:16px; }
+  .card { flex:1; min-width:150px; background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; padding:14px; }
+  .card h5 { margin:0 0 6px; font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.5px; }
+  .card b { font-size:18px; }
+  .hidden { display:none !important; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; margin-top:14px; }
+  .settings { background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:14px 16px; margin-bottom:18px; }
+  .settings h4 { margin:0 0 10px; font-size:14px; color:#1e40af; }
+  .settings label { font-size:13px; font-weight:600; }
+  .settings input[type=number] { width:100px; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; margin-left:6px; }
+  .legend { font-size:12px; color:#64748b; margin-top:22px; }
+  .badge { padding:1px 6px; border-radius:4px; font-size:11px; }
+  .badge-exact { background:#dcfce7; }
+  .badge-fuzzy { background:#fbbf24; }
+  .badge-date  { background:#a78bfa; color:#fff; }
+  .warn { background:#fef08a; border-radius:3px; padding:0 4px; }
+  .subtabs { display:flex; gap:6px; flex-wrap:wrap; }
+  .subtab { padding:7px 14px; background:#e5e7eb; border:none; border-radius:999px; cursor:pointer; font-weight:600; font-size:12px; }
+  .subtab span { font-weight:400; opacity:.75; }
+  .subtab.active { background:#2563eb; color:#fff; }
+  .search { flex:1; max-width:420px; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; }
+  .vtable { overflow:auto; max-height:600px; margin-top:6px; border:1px solid #e5e7eb; border-radius:8px; }
+  .vtable table { margin-top:0; }
+  .vtable th { position:sticky; top:0; z-index:1; }
+  .vtable tr:hover td { background:#f8fafc; }
+  .vtotal td { position:sticky; bottom:0; background:#f1f5f9 !important; font-weight:700; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ASIF &amp; ASSOCIATES — GST TOOLS</h1>
+  <p>GSTR-1 JSON → Excel · GSTR-2B JSON → Excel · Books Reconciliation</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-panel="p1">GSTR-1 JSON → Excel</button>
+  <button class="tab" data-panel="p2">GSTR-2B JSON → Excel</button>
+  <button class="tab" data-panel="p3">Reconciliation of Books</button>
+</div>
+
+<!-- ================= PANEL 1 : GSTR-1 ================= -->
+<div id="p1" class="panel active">
+  <p style="font-size:13px">Drop your GSTR-1 JSON files here or click to browse. You can select up to 12 months at once. Your data stays on this computer.</p>
+  <div class="dropzone" id="dz1">Drop GSTR-1 JSON files here or click to browse</div>
+  <div class="row"><button class="btn" id="btn1" disabled>⬇ Download Excel</button></div>
+  <div class="status" id="st1"></div>
+  <div id="sum1"></div>
+</div>
+
+<!-- ================= PANEL 2 : GSTR-2B ================= -->
+<div id="p2" class="panel">
+  <p style="font-size:13px">Drop your GSTR-2B JSON files here. Data stays on your computer.</p>
+  <div class="dropzone" id="dz2">Drop GSTR-2B JSON files here or click to browse</div>
+  <div class="row"><button class="btn" id="btn2" disabled>⬇ Download Excel</button></div>
+  <div class="status" id="st2"></div>
+  <div id="sum2"></div>
+</div>
+
+<!-- ================= PANEL 3 : RECONCILIATION ================= -->
+<div id="p3" class="panel">
+
+  <div class="settings">
+    <h4>⚙️ Reconciliation Settings</h4>
+    <div class="row" style="margin-top:0;gap:18px">
+      <label>Tax difference tolerance (₹):
+        <input id="tolTax" type="number" value="1" min="0" step="0.01">
+      </label>
+      <label>Date tolerance (± days):
+        <input id="tolDays" type="number" value="3" min="0" max="30">
+      </label>
+      <label style="display:flex;align-items:center;gap:6px">
+        <input id="fuzzyOn" type="checkbox" checked> Enable fuzzy invoice matching
+      </label>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step" id="stepA">
+      <h4>Step 1 — Download Template</h4>
+      <p>Excel with 2 sheets (Purchase &amp; Purchase Return), 11 columns incl. Reverse Charge.</p>
+      <button class="btn secondary" id="btnDownloadTemplate">⬇ Download Template</button>
+    </div>
+
+    <div class="step" id="stepB">
+      <h4>Step 2 — Upload Filled Books</h4>
+      <p>Upload your completed Excel (same 2-sheet format).</p>
+      <div class="dropzone" id="dzBooks" style="padding:16px">Drop books Excel here or click</div>
+      <div class="status" id="stBooks"></div>
+    </div>
+
+    <div class="step" id="stepC">
+      <h4>Step 3 — Upload GSTR-2B JSON</h4>
+      <p>Upload the GSTR-2B JSON downloaded from the portal.</p>
+      <div class="dropzone" id="dz2b" style="padding:16px">Drop GSTR-2B JSON here or click</div>
+      <div class="status" id="st2b"></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <button class="btn" id="btnReconcile" disabled>🔍 Run Reconciliation</button>
+    <button class="btn secondary" id="btnExport" disabled>⬇ Export Result to Excel</button>
+  </div>
+
+  <div id="reconSummary" class="summary hidden"></div>
+  <div id="reconOutput" style="margin-top:18px"></div>
+
+  <p class="legend">
+    <b>Legend:</b>
+    <span style="background:#fee2e2;padding:2px 6px;border-radius:4px">Red</span> = difference exceeds tax tolerance ·
+    <span style="background:#fef3c7;padding:2px 6px;border-radius:4px">Yellow</span> = matched via fuzzy/date ·
+    <span style="background:#fef08a;padding:2px 6px;border-radius:4px">Amber</span> = invalid GSTIN
+  </p>
+</div>
+
+<script>
+/* =========================================================================
+   TAB SWITCHING
+   ========================================================================= */
+document.querySelectorAll('.tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.panel).classList.add('active');
+  };
+});
+
+/* =========================================================================
+   GENERIC DROPZONE HELPER
+   ========================================================================= */
+function wireDropzone(zoneId, inputId, onFiles, opts = {}) {
+  const zone = document.getElementById(zoneId);
+  let input = document.getElementById(inputId);
+  if (!input) {
+    input = document.createElement('input');
+    input.type = 'file';
+    input.id = inputId;
+    input.style.display = 'none';
+    document.body.appendChild(input);
+  }
+  input.multiple = opts.multiple !== false;   // allow selecting several months at once
+  if (opts.accept) input.accept = opts.accept;
+  zone.addEventListener('click', () => input.click());
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) onFiles([...e.dataTransfer.files]);
+  });
+  input.addEventListener('change', e => {
+    if (e.target.files.length) onFiles([...e.target.files]);
+    input.value = "";                            // so picking the same file again re-triggers
+  });
+}
+
+/* =========================================================================
+   SHARED HELPERS (numbers / tax blocks)
+   Handles both schemas:
+     GSTR-1 / 2A style : itms[].itm_det.{txval,iamt,camt,samt,csamt}
+     GSTR-2B style     : items[].{txval,igst,cgst,sgst,cess} + doc-level totals
+   ========================================================================= */
+function toNum(v) {
+  if (v === undefined || v === null || v === "") return 0;
+  const n = parseFloat(String(v).replace(/[,\s]/g, ""));
+  return isNaN(n) ? 0 : n;
+}
+const r2 = v => +(+v).toFixed(2);
+function taxOf(o = {}) {
+  return {
+    rt: o.rt ?? "",
+    tv: toNum(o.txval),
+    i:  toNum(o.iamt  ?? o.igst),
+    c:  toNum(o.camt  ?? o.cgst),
+    s:  toNum(o.samt  ?? o.sgst),
+    cs: toNum(o.csamt ?? o.cess)
+  };
+}
+// Line items of a document; if it has none, the document itself is treated as one line
+function docLines(doc = {}) {
+  const list = doc.items || doc.itms || [];
+  return list.length ? list.map(it => taxOf(it.itm_det || it.itmDet || it)) : [taxOf(doc)];
+}
+// Document totals: prefer doc-level totals (GSTR-2B has them), else sum the lines
+function docTotal(doc = {}) {
+  if (doc.txval !== undefined || doc.igst !== undefined || doc.cgst !== undefined) return taxOf(doc);
+  return docLines(doc).reduce((a, t) => ({
+    rt: "", tv: a.tv + t.tv, i: a.i + t.i, c: a.c + t.c, s: a.s + t.s, cs: a.cs + t.cs
+  }), { rt: "", tv: 0, i: 0, c: 0, s: 0, cs: 0 });
+}
+function noteType(nt) { return String(nt.typ ?? nt.ntty ?? "C").toUpperCase(); }
+function get2B(obj) {
+  const d = obj?.data ?? obj ?? {};
+  return {
+    gstin:  d.gstin  ?? obj?.gstin  ?? "",
+    rtnprd: d.rtnprd ?? obj?.rtnprd ?? obj?.fp ?? "",
+    dd:     d.docdata ?? obj?.docdata ?? {}
+  };
+}
+
+/* =========================================================================
+   PANEL 1 : GSTR-1 JSON → EXCEL
+   ========================================================================= */
+let gstr1Files = [], gstr1Result = null;
+
+/* ---------- Shared: read JSON files on selection, show on-page summary ---------- */
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtNum = v => typeof v === 'number'
+  ? v.toLocaleString('en-IN', { minimumFractionDigits: Number.isInteger(v) ? 0 : 2, maximumFractionDigits: 2 })
+  : esc(v);
+
+async function loadJsonFiles(files, cfg) {
+  const st  = document.getElementById(cfg.st);
+  const btn = document.getElementById(cfg.btn);
+  const out = document.getElementById(cfg.out);
+  const json = files.filter(f => f.name.toLowerCase().endsWith('.json'));
+  cfg.set(json, null);
+  btn.disabled = true;
+  out.innerHTML = "";
+  if (!json.length) { st.innerHTML = `<span class="err">❌ Please select JSON files only</span>`; return; }
+
+  st.innerHTML = `<span>⏳ Reading ${json.length} file(s)…</span>`;
+  try {
+    const res = await cfg.build(json);
+    cfg.set(json, res);
+    const counts = Object.entries(res.sheets).filter(([,r]) => r.length > 1)
+                         .map(([k,r]) => `${k}: ${r.length - 1} rows`).join(' · ');
+    st.innerHTML = `<span class="ok">✅ ${json.length} file(s) loaded: ${esc(json.map(f => f.name).join(', '))}` +
+                   `<br>${counts || 'no rows'}</span>`;
+    if (!counts) st.innerHTML += `<br><span class="err">⚠️ ${cfg.emptyMsg}</span>`;
+    out.innerHTML = renderFileSummary(res.summaryRows, cfg.cards) + `<div class="viewer"></div>`;
+    mountViewer(out.querySelector('.viewer'), res.sheets);
+    btn.disabled = false;
+  } catch (err) {
+    console.error(err);
+    st.innerHTML = `<span class="err">❌ ${esc(err.message)}</span>`;
+  }
+}
+
+// Adds a TOTAL row (sums every numeric column after File / GSTIN / Period)
+function withTotalRow(summaryRows) {
+  const rows = summaryRows.slice(1);
+  if (rows.length < 2) return summaryRows;
+  const total = summaryRows[0].map((_, c) =>
+    c === 0 ? "TOTAL" : c < 3 ? "" : r2(rows.reduce((a, r) => a + (+r[c] || 0), 0)));
+  return [...summaryRows, total];
+}
+
+function renderFileSummary(summaryRows, cards) {
+  const head = summaryRows[0];
+  const rows = summaryRows.slice(1);
+  const sum  = name => { const c = head.indexOf(name); return r2(rows.reduce((a, r) => a + (+r[c] || 0), 0)); };
+
+  const cardHtml = cards.map(([col, label, color]) =>
+    `<div class="card"><h5>${esc(label || col)}</h5><b${color ? ` style="color:${color}"` : ''}>${fmtNum(sum(col))}</b></div>`
+  ).join('');
+
+  const all = withTotalRow(summaryRows);
+  const th = head.map(h => `<th>${esc(h)}</th>`).join('');
+  const tb = all.slice(1).map((r, i) => {
+    const isTotal = rows.length > 1 && i === all.length - 2;
+    return `<tr${isTotal ? ' style="font-weight:700;background:#f1f5f9"' : ''}>` +
+           r.map((v, c) => `<td${c >= 3 ? ' style="text-align:right"' : ''}>${fmtNum(v)}</td>`).join('') + `</tr>`;
+  }).join('');
+
+  return `<div class="summary">${cardHtml}</div>
+          <h3 style="margin-top:22px">Month-wise Summary (${rows.length} file${rows.length > 1 ? 's' : ''})</h3>
+          <div style="overflow-x:auto"><table><tr>${th}</tr>${tb}</table></div>`;
+}
+
+/* ---------- Detailed data viewer: sub-tab per section, search, paging, totals ---------- */
+const SUM_COLS = /^(taxable value|cgst|sgst|igst|cess|total value|quantity)$/i;
+
+function mountViewer(el, sheets) {
+  const names = Object.keys(sheets).filter(k => sheets[k].length > 1);
+  if (!names.length) { el.innerHTML = ""; return; }
+  const PAGE = 100;
+  let cur = names[0], q = "", page = 0;
+
+  el.innerHTML = `
+    <h3 style="margin-top:26px">Detailed Data</h3>
+    <div class="subtabs">${names.map(n =>
+      `<button class="subtab" data-s="${esc(n)}">${esc(n)} <span>(${(sheets[n].length - 1).toLocaleString('en-IN')})</span></button>`
+    ).join('')}</div>
+    <div class="row" style="margin-top:10px;align-items:center">
+      <input class="search" type="search" placeholder="🔍 Search invoice no, GSTIN, name, date…">
+      <span class="vinfo" style="font-size:12px;color:#64748b"></span>
+    </div>
+    <div class="vtable"></div>
+    <div class="row pager" style="align-items:center"></div>`;
+
+  const draw = () => {
+    el.querySelectorAll('.subtab').forEach(b => b.classList.toggle('active', b.dataset.s === cur));
+    const [head, ...rows] = sheets[cur];
+    const needle = q.trim().toLowerCase();
+    const filtered = needle ? rows.filter(r => r.some(v => String(v).toLowerCase().includes(needle))) : rows;
+    const pages = Math.max(1, Math.ceil(filtered.length / PAGE));
+    page = Math.min(page, pages - 1);
+    const slice = filtered.slice(page * PAGE, (page + 1) * PAGE);
+    const isNum = c => rows.some(r => typeof r[c] === 'number');
+
+    const th = `<tr><th>#</th>${head.map(h => `<th>${esc(h)}</th>`).join('')}</tr>`;
+    const tb = slice.map((r, i) => `<tr><td style="color:#94a3b8">${page * PAGE + i + 1}</td>${
+      r.map((v, c) => `<td${isNum(c) ? ' style="text-align:right"' : ''}>${fmtNum(v)}</td>`).join('')}</tr>`).join('');
+    const tot = `<tr class="vtotal"><td></td>${head.map((h, c) =>
+      SUM_COLS.test(h) ? `<td style="text-align:right">${fmtNum(r2(filtered.reduce((a, r) => a + (+r[c] || 0), 0)))}</td>`
+                       : `<td>${c === 0 ? (needle ? 'TOTAL (filtered)' : 'TOTAL') : ''}</td>`).join('')}</tr>`;
+
+    el.querySelector('.vtable').innerHTML = `<table>${th}${tb}${filtered.length ? tot : ''}</table>` +
+      (filtered.length ? '' : `<p style="color:#64748b">No rows match “${esc(q)}”.</p>`);
+    el.querySelector('.vinfo').textContent = filtered.length
+      ? `Showing ${page * PAGE + 1}–${page * PAGE + slice.length} of ${filtered.length.toLocaleString('en-IN')} rows` +
+        (needle ? ` (filtered from ${rows.length.toLocaleString('en-IN')})` : '') + ' · totals cover all matching rows'
+      : '';
+    el.querySelector('.pager').innerHTML = pages > 1
+      ? `<button class="btn secondary" data-p="-1" ${page === 0 ? 'disabled' : ''}>◀ Prev</button>
+         <span style="font-size:13px">Page ${page + 1} of ${pages}</span>
+         <button class="btn secondary" data-p="1" ${page === pages - 1 ? 'disabled' : ''}>Next ▶</button>`
+      : '';
+  };
+
+  el.querySelectorAll('.subtab').forEach(b => b.onclick = () => { cur = b.dataset.s; page = 0; draw(); });
+  el.querySelector('.search').oninput = e => { q = e.target.value; page = 0; draw(); };
+  el.querySelector('.pager').onclick = e => {
+    const p = e.target.closest('[data-p]'); if (!p || p.disabled) return;
+    page += +p.dataset.p; draw();
+    el.querySelector('.vtable').scrollTop = 0;
+  };
+  draw();
+}
+
+function writeResultBook(res, prefix) {
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(withTotalRow(res.summaryRows)), "Summary");
+  Object.entries(res.sheets).forEach(([name, rows]) => {
+    if (rows.length > 1) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), name);
+  });
+  XLSX.writeFile(wb, `${prefix}_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+wireDropzone('dz1','f1', files => loadJsonFiles(files, {
+  st:'st1', btn:'btn1', out:'sum1', build: buildGstr1,
+  set: (f, r) => { gstr1Files = f; gstr1Result = r; },
+  emptyMsg: 'No data found. Check that these are GSTR-1 JSON files (contain "b2b", "b2cs", "hsn" …).',
+  cards: [
+    ["B2B Invoices"], ["Export Invoices"], ["CDNR Notes", "Credit/Debit Notes"],
+    ["Taxable Value (net of CN)", "Taxable Value (net)"],
+    ["CGST"], ["SGST"], ["IGST"], ["Cess"], ["Total Tax", "Total Tax", "#1e40af"]
+  ]
+}), { accept:'.json' });
+
+document.getElementById('btn1').onclick = () => {
+  if (!gstr1Result) return;
+  writeResultBook(gstr1Result, "GSTR1");
+  document.getElementById('st1').insertAdjacentHTML('beforeend', `<br><span class="ok">⬇ Excel downloaded</span>`);
+};
+
+async function buildGstr1(files) {
+  const TAX_H = ["Rate","Taxable Value","CGST","SGST","IGST","Cess"];
+  const S = {
+    B2B:   [["Return Period","GSTIN","Receiver GSTIN","Invoice No","Invoice Date","Invoice Value",
+             "Place of Supply","Reverse Charge","Invoice Type","E-Com GSTIN", ...TAX_H, "File"]],
+    B2CL:  [["Return Period","GSTIN","Invoice No","Invoice Date","Invoice Value","Place of Supply",
+             "E-Com GSTIN", ...TAX_H, "File"]],
+    B2CS:  [["Return Period","GSTIN","Supply Type","Type","Place of Supply","E-Com GSTIN", ...TAX_H, "File"]],
+    CDNR:  [["Return Period","GSTIN","Receiver GSTIN","Note No","Note Date","Note Type","Note Value",
+             "Place of Supply","Reverse Charge", ...TAX_H, "File"]],
+    CDNUR: [["Return Period","GSTIN","UR Type","Note No","Note Date","Note Type","Note Value",
+             "Place of Supply", ...TAX_H, "File"]],
+    EXP:   [["Return Period","GSTIN","Export Type","Invoice No","Invoice Date","Invoice Value",
+             "Port Code","Shipping Bill No","Shipping Bill Date","Rate","Taxable Value","IGST","Cess","File"]],
+    HSN:   [["Return Period","GSTIN","Section","HSN","Description","UQC","Quantity","Total Value",
+             "Taxable Value","CGST","SGST","IGST","Cess","Rate","File"]]
+  };
+  const summaryRows = [[
+    "File","GSTIN","Return Period","B2B Invoices","B2CL Invoices","CDNR Notes","CDNUR Notes",
+    "Export Invoices","Taxable Value (net of CN)","CGST","SGST","IGST","Cess","Total Tax"
+  ]];
+  const taxCols = t => [t.rt, t.tv, t.c, t.s, t.i, t.cs];
+
+  for (const file of files) {
+    let obj;
+    try { obj = JSON.parse(await file.text()); }
+    catch (e) { throw new Error(`File "${file.name}" is not valid JSON`); }
+    const gstin = obj?.gstin || "";
+    const fp    = obj?.fp    || "";
+    const T = { tv:0, c:0, s:0, i:0, cs:0 };
+    const add = (t, sign = 1) => { T.tv += sign*t.tv; T.c += sign*t.c; T.s += sign*t.s; T.i += sign*t.i; T.cs += sign*t.cs; };
+    const n = { b2b:0, b2cl:0, cdnr:0, cdnur:0, exp:0 };
+
+    // B2B
+    (obj.b2b || []).forEach(g => (g.inv || []).forEach(inv => {
+      n.b2b++;
+      docLines(inv).forEach(t => {
+        add(t);
+        S.B2B.push([fp, gstin, g.ctin || "", inv.inum || "", inv.idt || inv.dt || "", toNum(inv.val),
+                    inv.pos || "", inv.rchrg || "N", inv.inv_typ || "R", inv.etin || g.etin || "",
+                    ...taxCols(t), file.name]);
+      });
+    }));
+
+    // B2CL
+    (obj.b2cl || []).forEach(g => (g.inv || []).forEach(inv => {
+      n.b2cl++;
+      docLines(inv).forEach(t => {
+        add(t);
+        S.B2CL.push([fp, gstin, inv.inum || "", inv.idt || "", toNum(inv.val), g.pos || inv.pos || "",
+                     inv.etin || "", ...taxCols(t), file.name]);
+      });
+    }));
+
+    // B2CS
+    (obj.b2cs || []).forEach(r => {
+      const t = taxOf(r);
+      add(t);
+      S.B2CS.push([fp, gstin, r.sply_ty || "", r.typ || "", r.pos || "", r.etin || "", ...taxCols(t), file.name]);
+    });
+
+    // CDNR (credit notes reduce the totals, debit notes add)
+    (obj.cdnr || []).forEach(g => (g.nt || []).forEach(nt => {
+      n.cdnr++;
+      const ty = noteType(nt);
+      docLines(nt).forEach(t => {
+        add(t, ty === "C" ? -1 : 1);
+        S.CDNR.push([fp, gstin, g.ctin || "", nt.nt_num || nt.ntnum || "", nt.nt_dt || nt.dt || "", ty,
+                     toNum(nt.val), nt.pos || "", nt.rchrg || "N", ...taxCols(t), file.name]);
+      });
+    }));
+
+    // CDNUR
+    (obj.cdnur || []).forEach(nt => {
+      n.cdnur++;
+      const ty = noteType({ ntty: nt.ntty });
+      docLines(nt).forEach(t => {
+        add(t, ty === "C" ? -1 : 1);
+        S.CDNUR.push([fp, gstin, nt.typ || "", nt.nt_num || "", nt.nt_dt || "", ty, toNum(nt.val),
+                      nt.pos || "", ...taxCols(t), file.name]);
+      });
+    });
+
+    // EXPORTS  (exp: [{exp_typ, inv:[{inum, idt, val, sbpcode, sbnum, sbdt, itms:[{rt,txval,iamt,csamt}]}]}])
+    (obj.exp || []).forEach(g => (g.inv || [g]).forEach(inv => {
+      n.exp++;
+      docLines(inv).forEach(t => {
+        add(t);
+        S.EXP.push([fp, gstin, g.exp_typ || "", inv.inum || "", inv.idt || inv.inv_dt || "", toNum(inv.val),
+                    inv.sbpcode || inv.port || "", inv.sbnum || "", inv.sbdt || "",
+                    t.rt, t.tv, t.i, t.cs, file.name]);
+      });
+    }));
+
+    // HSN (old schema: hsn.data ; new schema: hsn.hsn_b2b / hsn.hsn_b2c)
+    const hsnSets = [["", obj.hsn?.data], ["B2B", obj.hsn?.hsn_b2b], ["B2C", obj.hsn?.hsn_b2c]];
+    hsnSets.forEach(([sec, list]) => (list || []).forEach(h => {
+      S.HSN.push([fp, gstin, sec, h.hsn_sc || "", h.desc || h.user_desc || "", h.uqc || "", toNum(h.qty),
+                  toNum(h.val), toNum(h.txval), toNum(h.camt), toNum(h.samt), toNum(h.iamt),
+                  toNum(h.csamt), h.rt ?? "", file.name]);
+    }));
+
+    summaryRows.push([
+      file.name, gstin, fp, n.b2b, n.b2cl, n.cdnr, n.cdnur, n.exp,
+      r2(T.tv), r2(T.c), r2(T.s), r2(T.i), r2(T.cs), r2(T.c + T.s + T.i + T.cs)
+    ]);
+  }
+
+  return { sheets:S, summaryRows };
+}
+/* =========================================================================
+   PANEL 2 : GSTR-2B JSON → EXCEL  (robust parser)
+   ========================================================================= */
+let gstr2bFiles = [], gstr2bResult = null;
+
+wireDropzone('dz2','f2', files => loadJsonFiles(files, {
+  st:'st2', btn:'btn2', out:'sum2', build: buildGstr2b,
+  set: (f, r) => { gstr2bFiles = f; gstr2bResult = r; },
+  emptyMsg: 'No rows found. Check that the JSON is a GSTR-2B file (contains <code>data.docdata.b2b</code>).',
+  cards: [
+    ["B2B Invoices"], ["CDN Notes", "Credit/Debit Notes"], ["IMPG", "Import BoEs"],
+    ["Taxable Value (net of CN)", "Taxable Value (net)"],
+    ["CGST"], ["SGST"], ["IGST"], ["Cess"], ["Total Tax (net)", "Net ITC as per 2B", "#16a34a"]
+  ]
+}), { accept:'.json' });
+
+document.getElementById('btn2').onclick = () => {
+  if (!gstr2bResult) return;
+  writeResultBook(gstr2bResult, "GSTR2B");
+  document.getElementById('st2').insertAdjacentHTML('beforeend', `<br><span class="ok">⬇ Excel downloaded</span>`);
+};
+
+async function buildGstr2b(files) {
+  const allB2B = [[
+    "Return Period","GSTIN","Supplier Name","Invoice No","Invoice Date","Invoice Value",
+    "Place of Supply","Reverse Charge","Rate","Taxable Value",
+    "CGST","SGST","IGST","Cess","ITC Available","Reason","File"
+  ]];
+  const allCDN = [[
+    "Return Period","GSTIN","Supplier Name","Note No","Note Date","Note Type","Note Value",
+    "Place of Supply","Reverse Charge","Rate","Taxable Value",
+    "CGST","SGST","IGST","Cess","ITC Available","Reason","File"
+  ]];
+  const allIMPG = [[
+    "Return Period","Port Code","Bill of Entry No","Bill of Entry Date","Reference Date",
+    "Taxable Value","IGST","Cess","File"
+  ]];
+  const allIMPGSEZ = [[
+    "Return Period","GSTIN","Trade Name","Port Code","Bill of Entry No","Bill of Entry Date",
+    "Taxable Value","IGST","Cess","File"
+  ]];
+  const allISD = [[
+    "Return Period","GSTIN","Trade Name","Doc Type","Document No","Document Date",
+    "CGST","SGST","IGST","Cess","ITC Eligible","File"
+  ]];
+  const summaryRows = [[
+    "File","GSTIN","Return Period","B2B Invoices","CDN Notes","IMPG","IMPGSEZ","ISD",
+    "Taxable Value (net of CN)","CGST","SGST","IGST","Cess","Total Tax (net)"
+  ]];
+
+  for (const file of files) {
+    let obj;
+    try { obj = JSON.parse(await file.text()); }
+    catch (e) { throw new Error(`File "${file.name}" is not valid JSON`); }
+
+    const { gstin, rtnprd, dd } = get2B(obj);
+    const T = { tv:0, c:0, s:0, i:0, cs:0 };   // per-file totals
+    const add = (t, sign = 1) => { T.tv += sign*t.tv; T.c += sign*t.c; T.s += sign*t.s; T.i += sign*t.i; T.cs += sign*t.cs; };
+    const n = { b2b:0, cdn:0, impg:0, impgsez:0, isd:0 };
+
+    // ---------- B2B ----------
+    (dd.b2b || []).forEach(g => (g.inv || g.doclist || []).forEach(inv => {
+      n.b2b++;
+      add(docTotal(inv));
+      docLines(inv).forEach(t => allB2B.push([
+        rtnprd, g.ctin || "", g.trdnm || "", inv.inum || "", inv.dt || "", toNum(inv.val),
+        inv.pos || "", inv.rev ?? inv.rchrg ?? "N", t.rt, t.tv, t.c, t.s, t.i, t.cs,
+        inv.itcavl ?? "", inv.rsn || "", file.name
+      ]));
+    }));
+
+    // ---------- CDNR ----------
+    (dd.cdnr || []).forEach(g => (g.nt || []).forEach(nt => {
+      n.cdn++;
+      const ty = noteType(nt);
+      add(docTotal(nt), ty === "C" ? -1 : 1);
+      docLines(nt).forEach(t => allCDN.push([
+        rtnprd, g.ctin || "", g.trdnm || "", nt.ntnum ?? nt.nt_num ?? "", nt.dt ?? nt.nt_dt ?? "",
+        ty, toNum(nt.val), nt.pos || "", nt.rev ?? nt.rchrg ?? "N",
+        t.rt, t.tv, t.c, t.s, t.i, t.cs, nt.itcavl ?? "", nt.rsn || "", file.name
+      ]));
+    }));
+
+    // ---------- IMPG ----------
+    (dd.impg || []).forEach(im => {
+      n.impg++;
+      const t = taxOf(im); add(t);
+      allIMPG.push([rtnprd, im.portcode ?? im.port_code ?? "", im.boenum ?? im.boe_num ?? "",
+                    im.boedt ?? im.boe_dt ?? "", im.refdt || "", t.tv, t.i, t.cs, file.name]);
+    });
+
+    // ---------- IMPGSEZ ----------
+    (dd.impgsez || []).forEach(g => (g.boe || [g]).forEach(b => {
+      n.impgsez++;
+      const t = taxOf(b); add(t);
+      allIMPGSEZ.push([rtnprd, g.ctin || "", g.trdnm || "", b.portcode ?? b.port_code ?? "",
+                       b.boenum ?? b.boe_num ?? "", b.boedt ?? b.boe_dt ?? "", t.tv, t.i, t.cs, file.name]);
+    }));
+
+    // ---------- ISD ----------
+    (dd.isd || []).forEach(g => (g.doclist || []).forEach(doc => {
+      n.isd++;
+      const t = docTotal(doc);
+      add(t, /CN|CREDIT/i.test(doc.doctyp || "") ? -1 : 1);
+      allISD.push([rtnprd, g.ctin || "", g.trdnm || "", doc.doctyp || "", doc.docnum || "",
+                   doc.docdt || "", t.c, t.s, t.i, t.cs, doc.itcelg ?? "", file.name]);
+    }));
+
+    summaryRows.push([
+      file.name, gstin, rtnprd, n.b2b, n.cdn, n.impg, n.impgsez, n.isd,
+      r2(T.tv), r2(T.c), r2(T.s), r2(T.i), r2(T.cs), r2(T.c + T.s + T.i + T.cs)
+    ]);
+  }
+
+  return {
+    sheets: { B2B:allB2B, CDNR:allCDN, IMPG:allIMPG, IMPGSEZ:allIMPGSEZ, ISD:allISD },
+    summaryRows
+  };
+}
+
+/* =========================================================================
+   PANEL 3 : RECONCILIATION (Enhanced)
+   ========================================================================= */
+
+/* ---------- Column definition (11 columns) ---------- */
+const HEADERS = [
+  "Invoice Date","Invoice Number","GSTIN","Party Name",
+  "Taxable Value","CGST","IGST","SGST",
+  "Total Invoice Value","Total Tax Value","Reverse Charge (Y/N)"
+];
+
+/* ---------- GSTIN validation (regex + checksum) ---------- */
+const GSTIN_REGEX  = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+const GSTIN_CHARS  = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+function gstinChecksum(gstin) {
+  if (!GSTIN_REGEX.test(gstin)) return false;
+  let sum = 0;
+  for (let i = 0; i < 14; i++) {
+    const v = GSTIN_CHARS.indexOf(gstin[i]);
+    const f = (i % 2 === 0) ? 1 : 2;
+    const p = v * f;
+    sum += Math.floor(p / 36) + (p % 36);
+  }
+  const check = (36 - (sum % 36)) % 36;
+  return GSTIN_CHARS[check] === gstin[14];
+}
+function isValidGSTIN(g) {
+  return typeof g === 'string' && g.length === 15 && gstinChecksum(g.toUpperCase());
+}
+
+/* ---------- Invoice number normalization + Levenshtein ---------- */
+function normalizeInvoiceNo(s) {
+  // "INV/24-25/001" and "inv-24-25-1" both become "INV24251"
+  return String(s ?? "").toUpperCase()
+    .split(/[^A-Z0-9]+/)
+    .map(t => t.replace(/^0+(?=\d)/, ""))
+    .join("");
+}
+function levenshtein(a, b) {
+  a = a || ""; b = b || "";
+  if (a === b) return 0;
+  const m = a.length, n = b.length;
+  if (!m) return n; if (!n) return m;
+  let prev = Array.from({length:n+1}, (_,i)=>i);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) {
+      cur[j] = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1] + (a[i-1]===b[j-1]?0:1));
+    }
+    prev = cur;
+  }
+  return prev[n];
+}
+
+/* ---------- Date helpers ---------- */
+function parseDateStr(v) {
+  if (!v) return null;
+  if (v instanceof Date && !isNaN(v)) return v;
+  if (typeof v === 'number') {               // Excel serial date
+    const p = XLSX.SSF.parse_date_code(v);
+    return p ? new Date(p.y, p.m - 1, p.d) : null;
+  }
+  const s = String(v).trim();
+  let m;
+  if ((m = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})$/))) {
+    let [_, d, mo, y] = m; y = +y < 100 ? 2000 + (+y) : +y;
+    const dt = new Date(y, +mo - 1, +d); return isNaN(dt) ? null : dt;
+  }
+  if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) {
+    const dt = new Date(+m[1], +m[2] - 1, +m[3]); return isNaN(dt) ? null : dt;
+  }
+  const dt = new Date(s); return isNaN(dt) ? null : dt;
+}
+function fmtDate(d) {
+  if (!(d instanceof Date) || isNaN(d)) return "";
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  return `${dd}-${mm}-${d.getFullYear()}`;
+}
+function dayDiff(a, b) {
+  if (!a || !b) return Infinity;
+  return Math.abs((a - b) / 86400000);
+}
+
+/* ---------- STEP 1: Download template ---------- */
+document.getElementById('btnDownloadTemplate').onclick = () => {
+  const wb = XLSX.utils.book_new();
+  const wsP = XLSX.utils.aoa_to_sheet([
+    HEADERS,
+    ["01-04-2025","INV-001","27AABCU9603R1ZM","ABC Traders Pvt Ltd",
+     10000,900,0,900,11800,1800,"N"]
+  ]);
+  wsP['!cols'] = HEADERS.map(() => ({wch:20}));
+  XLSX.utils.book_append_sheet(wb, wsP, "Purchase");
+
+  const wsR = XLSX.utils.aoa_to_sheet([
+    HEADERS,
+    ["01-04-2025","DN-001","27AABCU9603R1ZM","ABC Traders Pvt Ltd",
+     5000,450,0,450,5900,900,"N"]
+  ]);
+  wsR['!cols'] = HEADERS.map(() => ({wch:20}));
+  XLSX.utils.book_append_sheet(wb, wsR, "Purchase Return");
+
+  XLSX.writeFile(wb, "Books_Template_Reconciliation.xlsx");
+};
+
+/* ---------- STEP 2: Upload Books Excel ---------- */
+let booksData = { purchase: [], purchaseReturn: [] };
+let isBooksLoaded = false;
+
+wireDropzone('dzBooks','fBooks', async files => {
+  try {
+    const buf = await files[0].arrayBuffer();
+    // No cellDates: SheetJS shifts dates a day back in IST; serials are converted in parseDateStr
+    const wb  = XLSX.read(buf, { type:'array' });
+
+    booksData.purchase       = parseBooksSheet(wb, "Purchase");
+    booksData.purchaseReturn = parseBooksSheet(wb, "Purchase Return");
+    isBooksLoaded = true;
+
+    document.getElementById('stepB').classList.add('done');
+    document.getElementById('stBooks').innerHTML =
+      `<span class="ok">✅ Loaded ${booksData.purchase.length} purchase rows, ` +
+      `${booksData.purchaseReturn.length} return rows</span>`;
+    enableReconcile();
+  } catch (err) {
+    document.getElementById('stBooks').innerHTML = `<span class="err">❌ ${err.message}</span>`;
+  }
+}, { multiple:false, accept:'.xlsx,.xls' });
+
+function parseBooksSheet(wb, name) {
+  const key = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, "");
+  const sheetName = wb.SheetNames.find(n => key(n) === key(name));
+  const ws = sheetName && wb.Sheets[sheetName];
+  if (!ws) throw new Error(`Sheet "${name}" not found in uploaded file.`);
+  const rows = XLSX.utils.sheet_to_json(ws, { defval:"" });
+
+  return rows.map(r0 => {
+    // Header lookup ignores case, spaces and punctuation ("Invoice No." == "invoice no")
+    const r = {};
+    Object.keys(r0).forEach(k => { r[key(k)] = r0[k]; });
+    const g = (...ks) => { for (const k of ks) if (r[key(k)] !== undefined) return r[key(k)]; return ""; };
+    const num = toNum;
+    const gstin = String(g("GSTIN")).trim().toUpperCase();
+    return {
+      invoiceDateRaw: g("Invoice Date"),
+      invoiceDate:    parseDateStr(g("Invoice Date")),
+      invoiceNumber:  String(g("Invoice Number", "Invoice No")).trim(),
+      gstin:          gstin,
+      gstinValid:     isValidGSTIN(gstin),
+      partyName:      String(g("Party Name")).trim(),
+      taxableValue:   num(g("Taxable Value")),
+      cgst:           num(g("CGST")),
+      igst:           num(g("IGST")),
+      sgst:           num(g("SGST")),
+      totalInvoiceValue: num(g("Total Invoice Value")),
+      totalTaxValue:  num(g("Total Tax Value")),
+      reverseCharge:  /^y/i.test(String(g("Reverse Charge (Y/N)", "Reverse Charge")).trim()),
+      source:         "BOOKS"
+    };
+  }).filter(r => r.invoiceNumber || r.gstin);
+}
+
+/* ---------- STEP 3: Upload GSTR-2B JSON ---------- */
+let json2b = [];
+let is2bLoaded = false;
+
+wireDropzone('dz2b','f2b', async files => {
+  try {
+    let combined = [];
+    for (const file of files) {
+      let obj;
+      try { obj = JSON.parse(await file.text()); }
+      catch (e) { throw new Error(`File "${file.name}" is not valid JSON`); }
+      combined = combined.concat(extract2bRows(obj));
+    }
+    json2b = combined;
+    is2bLoaded = true;
+
+    document.getElementById('stepC').classList.add('done');
+    document.getElementById('st2b').innerHTML =
+      `<span class="ok">✅ Parsed ${json2b.length} invoice rows from GSTR-2B</span>`;
+    enableReconcile();
+  } catch (err) {
+    document.getElementById('st2b').innerHTML = `<span class="err">❌ ${err.message}</span>`;
+  }
+});
+
+function extract2bRows(obj) {
+  const { dd } = get2B(obj);
+  const rows = [];
+  const pushRow = (g, doc, invNo, source) => {
+    const t = docTotal(doc);
+    const gstin = String(g.ctin || "").trim().toUpperCase();
+    rows.push({
+      invoiceDate:   parseDateStr(doc.dt ?? doc.nt_dt ?? ""),
+      invoiceNumber: String(invNo || "").trim(),
+      gstin,
+      gstinValid:    isValidGSTIN(gstin),
+      partyName:     String(g.trdnm || g.ctin || "").trim(),
+      taxableValue:  r2(t.tv),
+      cgst:          r2(t.c),
+      igst:          r2(t.i),
+      sgst:          r2(t.s),
+      totalInvoiceValue: r2(toNum(doc.val) || (t.tv + t.c + t.i + t.s)),
+      totalTaxValue: r2(t.c + t.i + t.s),
+      reverseCharge: /Y/i.test(String(doc.rev ?? doc.rchrg ?? "")),
+      source
+    });
+  };
+
+  // B2B invoices → Purchase
+  (dd.b2b || []).forEach(g => (g.inv || g.doclist || []).forEach(inv =>
+    pushRow(g, inv, inv.inum, "2B-B2B")));
+
+  // Credit notes → Purchase Return ; Debit notes (extra charge by supplier) → Purchase
+  (dd.cdnr || []).forEach(g => (g.nt || []).forEach(nt =>
+    pushRow(g, nt, nt.ntnum ?? nt.nt_num, noteType(nt) === "D" ? "2B-B2B" : "2B-CDN")));
+
+  return rows;
+}
+
+function enableReconcile() {
+  document.getElementById('btnReconcile').disabled = !(isBooksLoaded && is2bLoaded);
+}
+
+/* ---------- STEP 4: Reconciliation ---------- */
+let lastResult = null;
+
+document.getElementById('btnReconcile').onclick = () => {
+  const TOL_TAX  = parseFloat(document.getElementById('tolTax').value)  || 0;
+  const TOL_DAYS = parseInt(document.getElementById('tolDays').value)   || 0;
+  const FUZZY    = document.getElementById('fuzzyOn').checked;
+
+  const b2b2b  = json2b.filter(r => r.source === "2B-B2B");
+  const b2bCDN = json2b.filter(r => r.source === "2B-CDN");
+
+  const matchPurchase = reconcile(booksData.purchase,       b2b2b,  { TOL_DAYS, FUZZY, TOL_TAX });
+  const matchReturn   = reconcile(booksData.purchaseReturn, b2bCDN, { TOL_DAYS, FUZZY, TOL_TAX });
+
+  lastResult = { matchPurchase, matchReturn, TOL_TAX, TOL_DAYS, FUZZY };
+  renderResult(lastResult);
+  document.getElementById('btnExport').disabled = false;
+};
+
+function reconcile(booksRows, portalRows, opt) {
+  const { TOL_DAYS, FUZZY, TOL_TAX } = opt;
+  // Wrap every row once; the "used" flag lives on the wrapper for ALL passes
+  const B = booksRows.map(row => ({ row, used:false }));
+  const P = portalRows.map(row => ({ row, used:false }));
+  const matched = [], valueMismatch = [];
+  const nk   = r => `${r.gstin}||${normalizeInvoiceNo(r.invoiceNumber)}`;
+  const tax  = r => r.cgst + r.igst + r.sgst;
+  const take = (b, p, method) => { b.used = true; p.used = true; pushMatch(b.row, p.row, method); };
+  const unusedByGstin = list => groupBy(list.filter(x => !x.used), x => x.row.gstin);
+
+  // PASS 1 : exact (GSTIN + normalised invoice no)
+  const pIdx = new Map();
+  P.forEach(p => { const k = nk(p.row); if (!pIdx.has(k)) pIdx.set(k, []); pIdx.get(k).push(p); });
+  B.forEach(b => {
+    const p = (pIdx.get(nk(b.row)) || []).find(x => !x.used);
+    if (p) take(b, p, "exact");
+  });
+
+  // PASS 2 : fuzzy invoice no (same GSTIN, small typo, amounts agree)
+  if (FUZZY) {
+    const PG = unusedByGstin(P);
+    B.filter(b => !b.used).forEach(b => {
+      const pl = PG[b.row.gstin]; if (!pl) return;
+      const bn = normalizeInvoiceNo(b.row.invoiceNumber);
+      if (bn.length < 3) return;
+      const maxDist = bn.length >= 6 ? 2 : 1;
+      let best = null, bestDist = Infinity;
+      pl.forEach(p => {
+        if (p.used) return;
+        const pn = normalizeInvoiceNo(p.row.invoiceNumber);
+        if (pn.length < 3) return;
+        const d = levenshtein(bn, pn);
+        const amtOk = Math.abs(tax(b.row) - tax(p.row)) <= TOL_TAX ||
+                      Math.abs(b.row.taxableValue - p.row.taxableValue) <= TOL_TAX;
+        if (d <= maxDist && amtOk && d < bestDist) { bestDist = d; best = p; }
+      });
+      if (best) take(b, best, "fuzzy");
+    });
+  }
+
+  // PASS 3 : same GSTIN, date within ± days, tax within tolerance
+  if (TOL_DAYS > 0) {
+    const PG = unusedByGstin(P);
+    B.filter(b => !b.used).forEach(b => {
+      const pl = PG[b.row.gstin]; if (!pl) return;
+      let best = null, bestDelta = Infinity;
+      pl.forEach(p => {
+        if (p.used) return;
+        const dd = dayDiff(b.row.invoiceDate, p.row.invoiceDate);
+        const taxDelta = Math.abs(tax(b.row) - tax(p.row));
+        if (dd <= TOL_DAYS && taxDelta <= TOL_TAX && dd < bestDelta) { bestDelta = dd; best = p; }
+      });
+      if (best) take(b, best, "date");
+    });
+  }
+
+  const booksOnly  = B.filter(x => !x.used).map(x => x.row);
+  const portalOnly = P.filter(x => !x.used).map(x => x.row);
+  return { matched, booksOnly, portalOnly, valueMismatch };
+
+  function pushMatch(b, p, method) {
+    const diffTaxable = +(b.taxableValue - p.taxableValue).toFixed(2);
+    const bTax = +(b.cgst + b.igst + b.sgst).toFixed(2);
+    const pTax = +(p.cgst + p.igst + p.sgst).toFixed(2);
+    const diffTax = +(bTax - pTax).toFixed(2);
+    const row = { books:b, portal:p, diffTaxable, diffTax, bTax, pTax, method };
+    matched.push(row);
+    if (Math.abs(diffTax) > TOL_TAX) valueMismatch.push(row);
+  }
+}
+
+function groupBy(arr, fn) {
+  const m = {};
+  arr.forEach(x => { const k = fn(x) || "__NA__"; (m[k] = m[k] || []).push(x); });
+  return m;
+}
+
+/* ---------- Render ---------- */
+function renderResult(res) {
+  const { matchPurchase: MP, matchReturn: MR, TOL_TAX } = res;
+
+  const summary = document.getElementById('reconSummary');
+  summary.classList.remove('hidden');
+  summary.innerHTML = `
+    <div class="card"><h5>Purchase Matched</h5><b>${MP.matched.length}</b></div>
+    <div class="card"><h5>Purchase Diff &gt; ₹${TOL_TAX}</h5><b style="color:#dc2626">${MP.valueMismatch.length}</b></div>
+    <div class="card"><h5>Purchase Books-Only</h5><b>${MP.booksOnly.length}</b></div>
+    <div class="card"><h5>Purchase 2B-Only</h5><b>${MP.portalOnly.length}</b></div>
+    <div class="card"><h5>Return Matched</h5><b>${MR.matched.length}</b></div>
+    <div class="card"><h5>Return Diff &gt; ₹${TOL_TAX}</h5><b style="color:#dc2626">${MR.valueMismatch.length}</b></div>
+  `;
+
+  document.getElementById('reconOutput').innerHTML =
+    renderMatchTable("Purchase — Matched (value differences flagged)", MP.matched, TOL_TAX) +
+    renderOnlyTable("Purchase — In Books, Missing in 2B", MP.booksOnly) +
+    renderOnlyTable("Purchase — In 2B, Missing in Books", MP.portalOnly) +
+    renderMatchTable("Purchase Return — Matched", MR.matched, TOL_TAX) +
+    renderOnlyTable("Purchase Return — In Books, Missing in 2B", MR.booksOnly) +
+    renderOnlyTable("Purchase Return — In 2B, Missing in Books", MR.portalOnly);
+}
+
+function renderMatchTable(title, rows, TOL_TAX) {
+  if (!rows.length) return `<h3 style="margin-top:24px">${title}</h3><p style="color:#16a34a">✓ No rows</p>`;
+
+  let head = `<tr>
+    <th>Invoice No</th><th>GSTIN</th><th>Party</th><th>Method</th><th>RCM</th>
+    <th>Books Taxable</th><th>2B Taxable</th><th>Diff Taxable</th>
+    <th>Books Tax</th><th>2B Tax</th><th>Diff Tax</th></tr>`;
+  let body = rows.map(({books:b, portal:p, diffTaxable, diffTax, bTax, pTax, method}) => {
+    const overTax     = Math.abs(diffTax)     > TOL_TAX;
+    const overTaxable = Math.abs(diffTaxable) > TOL_TAX;
+    const rowStyle = overTax ? "background:#fee2e2" : (method !== "exact" ? "background:#fef3c7" : "");
+    const gstinFlag = (!b.gstinValid || !p.gstinValid)
+      ? ' <span class="warn" title="Invalid GSTIN">⚠</span>' : '';
+    const methodBadge =
+      method === "exact" ? `<span class="badge badge-exact">Exact</span>` :
+      method === "fuzzy" ? `<span class="badge badge-fuzzy">Fuzzy</span>` :
+                           `<span class="badge badge-date">Date</span>`;
+    return `<tr style="${rowStyle}">
+      <td>${b.invoiceNumber}</td>
+      <td>${b.gstin}${gstinFlag}</td>
+      <td>${b.partyName}</td>
+      <td>${methodBadge}</td>
+      <td>${b.reverseCharge?'Y':'N'}</td>
+      <td>${b.taxableValue}</td><td>${p.taxableValue}</td>
+      <td style="${overTaxable?'color:#dc2626;font-weight:600':''}">${diffTaxable}</td>
+      <td>${(+bTax).toFixed(2)}</td><td>${(+pTax).toFixed(2)}</td>
+      <td style="${overTax?'color:#dc2626;font-weight:600':''}">${diffTax}</td>
+    </tr>`;
+  }).join('');
+  return `<h3 style="margin-top:24px">${title} (${rows.length})</h3>
+          <div style="overflow-x:auto"><table>${head}${body}</table></div>`;
+}
+
+function renderOnlyTable(title, rows) {
+  if (!rows.length) return `<h3 style="margin-top:24px">${title}</h3><p style="color:#16a34a">✓ None</p>`;
+
+  let head = `<tr><th>Invoice Date</th><th>Invoice No</th><th>GSTIN</th><th>Party</th>
+              <th>RCM</th><th>Taxable</th><th>CGST</th><th>IGST</th><th>SGST</th><th>Total Tax</th></tr>`;
+  let body = rows.map(r => {
+    const gstinFlag = r.gstinValid ? "" : ' <span class="warn" title="Invalid GSTIN">⚠</span>';
+    const rowStyle  = r.gstinValid ? "" : "background:#fef9c3";
+    return `<tr style="${rowStyle}">
+      <td>${fmtDate(r.invoiceDate)}</td>
+      <td>${r.invoiceNumber}</td>
+      <td>${r.gstin}${gstinFlag}</td>
+      <td>${r.partyName}</td>
+      <td>${r.reverseCharge?'Y':'N'}</td>
+      <td>${r.taxableValue}</td><td>${r.cgst}</td><td>${r.igst}</td><td>${r.sgst}</td>
+      <td>${(r.cgst+r.igst+r.sgst).toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+  return `<h3 style="margin-top:24px">${title} (${rows.length})</h3>
+          <div style="overflow-x:auto"><table>${head}${body}</table></div>`;
+}
+
+/* ---------- Export ---------- */
+document.getElementById('btnExport').onclick = () => {
+  if (!lastResult) return;
+  const { matchPurchase: MP, matchReturn: MR, TOL_TAX } = lastResult;
+  const wb = XLSX.utils.book_new();
+
+  const summary = [
+    ["RECONCILIATION SUMMARY"],
+    ["Prepared on", new Date().toLocaleString()],
+    ["Tax difference tolerance (₹)", TOL_TAX],
+    ["Date tolerance (± days)", lastResult.TOL_DAYS],
+    ["Fuzzy matching", lastResult.FUZZY ? "Enabled" : "Disabled"],
+    [],
+    ["Section","Matched","Value Diff > Tol","Books Only","2B Only"],
+    ["Purchase", MP.matched.length, MP.valueMismatch.length, MP.booksOnly.length, MP.portalOnly.length],
+    ["Purchase Return", MR.matched.length, MR.valueMismatch.length, MR.booksOnly.length, MR.portalOnly.length]
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summary), "Summary");
+
+  appendMatchedSheet(wb, "Purchase Matched", MP.matched, TOL_TAX);
+  appendMatchedSheet(wb, "Return Matched",   MR.matched, TOL_TAX);
+  appendOnlySheet(wb, "Purchase Books-Only", MP.booksOnly);
+  appendOnlySheet(wb, "Purchase 2B-Only",    MP.portalOnly);
+  appendOnlySheet(wb, "Return Books-Only",   MR.booksOnly);
+  appendOnlySheet(wb, "Return 2B-Only",      MR.portalOnly);
+
+  XLSX.writeFile(wb, `Reconciliation_${new Date().toISOString().slice(0,10)}.xlsx`);
+};
+
+function appendMatchedSheet(wb, sheetName, rows, TOL_TAX) {
+  const header = ["Invoice No","GSTIN","Party","Match Method","RCM",
+                  "Books Taxable","2B Taxable","Diff Taxable",
+                  "Books Tax","2B Tax","Diff Tax"];
+  const data = [header];
+  rows.forEach(({books:b, portal:p, diffTaxable, diffTax, bTax, pTax, method}) => {
+    data.push([
+      b.invoiceNumber, b.gstin, b.partyName, method, b.reverseCharge?'Y':'N',
+      b.taxableValue, p.taxableValue, diffTaxable,
+      +bTax.toFixed(2), +pTax.toFixed(2), diffTax
+    ]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let R = 1; R <= range.e.r; R++) {
+    const cell = ws[XLSX.utils.encode_cell({ r:R, c:10 })];
+    const diffTax = cell ? Number(cell.v) : 0;
+    if (Math.abs(diffTax) > TOL_TAX) {
+      for (let C = 0; C <= range.e.c; C++) {
+        const addr = XLSX.utils.encode_cell({ r:R, c:C });
+        if (!ws[addr]) ws[addr] = { t:'s', v:'' };
+        ws[addr].s = { fill:{ fgColor:{ rgb:"FFFECACA" } } };
+      }
+    }
+  }
+  ws['!cols'] = header.map(() => ({ wch:18 }));
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+}
+
+function appendOnlySheet(wb, sheetName, rows) {
+  const header = ["Invoice Date","Invoice No","GSTIN","GSTIN Valid","Party","RCM",
+                  "Taxable","CGST","IGST","SGST","Total Tax"];
+  const data = [header];
+  rows.forEach(r => data.push([
+    fmtDate(r.invoiceDate), r.invoiceNumber, r.gstin,
+    r.gstinValid ? "Valid" : "INVALID", r.partyName,
+    r.reverseCharge?'Y':'N',
+    r.taxableValue, r.cgst, r.igst, r.sgst,
+    +(r.cgst + r.igst + r.sgst).toFixed(2)
+  ]));
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = header.map(() => ({ wch:18 }));
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+}
+</script>
+</body>
+</html>
